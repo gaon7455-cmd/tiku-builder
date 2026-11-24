@@ -1,0 +1,950 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="data:,">
+<title>tiku-builder · 把学习通课程做成翻页题库</title>
+<style>
+/* tiku-builder 向导页：只用浅色主题，白底黑字，不做深色切换。 */
+:root{
+  --bg:#ffffff; --surface:#ffffff; --surface2:#f6f6f6; --chip:#efefef;
+  --ink:#141414; --muted:#5c5c5c; --line:#d8d8d8;
+  --solid:#141414; --solid-ink:#ffffff;
+  --key:#c62828; --key-solid:#ff6f60;
+  color-scheme:light;
+}
+*{box-sizing:border-box} html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans SC",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.7;font-size:16px}
+a{color:var(--ink);text-underline-offset:3px} button{min-height:44px;font-family:inherit}
+input,textarea,select{font-family:inherit;font-size:15px;color:var(--ink)}
+.wrap{max-width:960px;margin:0 auto;padding:0 18px calc(120px + env(safe-area-inset-bottom,0px))}
+header{padding:26px 0 8px;border-bottom:1px solid var(--line)}
+header h1{font-family:"Noto Serif SC",serif;font-size:30px;line-height:1.25;margin:6px 0 8px;font-weight:900}
+header .sub{color:var(--muted);font-size:15px;margin:0 0 6px}
+.badge{display:inline-block;background:#141414;color:#fff;font-weight:800;font-size:12px;padding:4px 10px;border-radius:999px;letter-spacing:.04em}
+.key{color:var(--key);font-weight:800}
+.privacy{background:var(--surface2);border:1px solid var(--line);border-left:4px solid var(--key);border-radius:10px;padding:14px 16px;font-size:14px;margin:16px 0}
+.privacy b{color:var(--key)}
+.stepper{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 6px}
+.stepbtn{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:10px 14px;font-weight:700;cursor:pointer;min-height:44px;font-size:14px}
+.stepbtn.active{background:var(--solid);color:var(--solid-ink);border-color:var(--solid)}
+.stepbtn.done{border-color:var(--ink)}
+.stepbtn.done::after{content:" ✓"}
+section.step{display:none;margin-top:18px}
+section.step.on{display:block}
+h2{font-family:"Noto Serif SC",serif;font-size:22px;margin:0 0 6px;line-height:1.3;font-weight:900}
+h2 .no{color:var(--muted);font-family:"Noto Sans SC",sans-serif;font-size:13px;display:block;letter-spacing:.12em;font-weight:700}
+.lead{color:var(--muted);margin:0 0 16px;font-size:15px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:14px}
+.note{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:14px;font-size:14px;margin:12px 0}
+.warn{background:#fff7e6;border:1px solid #e6c87a;border-radius:10px;padding:14px;font-size:14px;margin:12px 0}
+.field{margin:12px 0}
+.field label{font-size:13px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px}
+.field input[type=text],.field input[type=url],.field textarea,.field select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface2);min-height:48px}
+.field textarea{min-height:120px;resize:vertical;line-height:1.6}
+.field .hint{font-size:13px;color:var(--muted);margin-top:4px}
+.btn{border:1.5px solid var(--ink);border-radius:999px;padding:12px 18px;font-weight:800;cursor:pointer;font-size:15px;min-height:48px;background:transparent;color:var(--ink)}
+.btn-primary{background:var(--solid);color:var(--solid-ink)}
+.btn-ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn-danger{border-color:var(--key);color:var(--key)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid var(--line);background:var(--surface2);color:var(--muted)}
+.pill.g{background:var(--solid);color:var(--solid-ink);border-color:var(--solid)}
+.pill.r{background:transparent;color:var(--muted);border:1px dashed var(--muted)}
+.pill.red{color:var(--key);border-color:var(--key);background:transparent}
+.radio-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.radio-card{border:1.5px solid var(--line);border-radius:12px;padding:16px;cursor:pointer;background:var(--surface)}
+.radio-card.sel{border-color:var(--ink);background:var(--surface2);outline:2px solid var(--ink)}
+.radio-card b{display:block;font-size:16px;margin-bottom:4px}
+.radio-card span{font-size:14px;color:var(--muted)}
+.qrow{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:8px 0;font-size:14px;background:var(--surface)}
+.qrow .qmeta{font-size:12px;color:var(--muted);margin-bottom:4px}
+.qrow .qtext{font-weight:700;line-height:1.55}
+.qrow .ans{margin-top:6px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;white-space:pre-line}
+.qrow .actions{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+.qrow.excluded{opacity:.55}
+details{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden}
+details summary{cursor:pointer;padding:16px 18px;font-weight:800;font-size:16px;min-height:52px;display:flex;align-items:center;justify-content:space-between;gap:12px;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details .body{padding:0 18px 18px;border-top:1px solid var(--line)}
+details .body p,details .body li{font-size:15px}
+ul.tight{margin:8px 0;padding-left:20px} ul.tight li{margin:4px 0}
+.progress{height:10px;background:var(--chip);border-radius:999px;overflow:hidden;margin:10px 0}
+.progress i{display:block;height:100%;background:var(--ink);width:0;transition:width .3s}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.thumbs img{width:96px;height:96px;object-fit:cover;border:1px solid var(--line);border-radius:8px}
+pre.code{background:#111;color:#f2f2f2;border-radius:10px;padding:14px;font-size:13px;overflow-x:auto;white-space:pre-wrap;word-break:break-all}
+footer{margin-top:36px;border-top:1px solid var(--line);padding-top:18px;color:var(--muted);font-size:13px}
+footer a{word-break:break-all}
+@media(max-width:720px){
+  .radio-cards{grid-template-columns:1fr}
+  header h1{font-size:25px} h2{font-size:20px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<span class="badge">tiku-builder · 开源 · 纯静态</span>
+<h1>把学习通课程做成翻页题库</h1>
+<p class="sub">上传课本照片识别课程 → 导出学习通习题 → 核实答案 → 生成和现在这个一样的翻页题库页。六步，全程免费。</p>
+</header>
+
+<div class="privacy"><b>隐私保证：</b>全部处理只在你的浏览器里完成，照片、课程信息、习题数据不会上传到任何服务器。本工具绝不索要、绝不保存学习通账号密码——登录请你自己在浏览器或 App 里完成。</div>
+
+<div class="stepper" id="stepper">
+<button class="stepbtn active" data-step="1">1 · 课程识别</button>
+<button class="stepbtn" data-step="2">2 · 补充选择</button>
+<button class="stepbtn" data-step="3">3 · 学习通导出</button>
+<button class="stepbtn" data-step="4">4 · 章节与习题</button>
+<button class="stepbtn" data-step="5">5 · 答案核实</button>
+<button class="stepbtn" data-step="6">6 · 生成题库页</button>
+</div>
+
+<!-- ============ 第 1 步：课程识别 ============ -->
+<section class="step on" id="step1">
+<h2><span class="no">STEP 1 · COURSE</span>课程识别</h2>
+<p class="lead">拍课本封面或目录页，自动识别课程名和教师；识别不准没关系，下面可以手动改。也可以跳过识别，直接手动填写。</p>
+<div class="card">
+<div class="field">
+<label>课本照片（可多选：封面、目录、扉页）</label>
+<input type="file" id="ocrFiles" accept="image/*" multiple>
+<div class="hint">照片只在你的浏览器里识别，不上传。识别用 Tesseract.js（中英文），需要联网加载识别库；加载失败也不影响手动填写。</div>
+</div>
+<div class="thumbs" id="ocrThumbs"></div>
+<div class="toolbar">
+<button class="btn btn-primary" id="ocrBtn">开始识别</button>
+<button class="btn btn-ghost" id="ocrSkip">跳过识别，直接手动填写</button>
+</div>
+<div id="ocrStatus" class="note" style="display:none"></div>
+<div class="field">
+<label>识别结果（可直接改）</label>
+<textarea id="ocrText" placeholder="识别出的文字会显示在这里，你可以复制有用的部分填到下面。"></textarea>
+</div>
+</div>
+<div class="card">
+<div class="field"><label>课程名称 *</label><input type="text" id="fCourse" placeholder="如：化妆品安全使用与功效评价"></div>
+<div class="field"><label>教师</label><input type="text" id="fTeacher" placeholder="如：隗晶晶"></div>
+<div class="field"><label>学校 / 班级</label><input type="text" id="fSchool" placeholder="如：深圳职业技术大学 · 24精化"></div>
+<div class="field"><label>学期</label><input type="text" id="fSemester" placeholder="如：2025-2026 第二学期"></div>
+<div class="field"><label>学习通 courseId 或课程链接（可选）</label><input type="text" id="fCourseId" placeholder="如：18600000000176，或粘贴课程链接">
+<div class="hint">courseId 在课程链接里能找到（courseId=后面的数字）。没有也不影响，只是导入时方便核对。</div></div>
+<div class="toolbar">
+<button class="btn btn-primary" onclick="saveCourse();goStep(2)">保存课程信息，下一步 →</button>
+</div>
+</div>
+</section>
+
+<!-- ============ 第 2 步：补充选择 ============ -->
+<section class="step" id="step2">
+<h2><span class="no">STEP 2 · SUPPLEMENT</span>要不要补充其他题库？</h2>
+<p class="lead">先定好：只做本课程的习题，还是另外补充外部题目。选了补充，后面第 4 步可以粘贴或逐条添加外部题（会标注“外部补充”，不冒充章节原题）。</p>
+<div class="radio-cards">
+<div class="radio-card sel" id="supCourse" onclick="setSupplement('course')">
+<b>只用本课程习题</b>
+<span>题库只含学习通里这门课的原题。适合考前只复习本课内容。</span>
+</div>
+<div class="radio-card" id="supBoth" onclick="setSupplement('both')">
+<b>补充外部题库</b>
+<span>除本课程原题外，再加外部题目（法规、标准、教材里找的题）。外部题单独标记来源。</span>
+</div>
+</div>
+<div class="note" id="supNote">当前选择：<b>只用本课程习题</b>。随时可以回来改，第 4 步才会真正用到这个选择。</div>
+<div class="toolbar">
+<button class="btn btn-ghost" onclick="goStep(1)">← 上一步</button>
+<button class="btn btn-primary" onclick="goStep(3)">下一步 →</button>
+</div>
+</section>
+
+<!-- ============ 第 3 步：学习通导出 ============ -->
+<section class="step" id="step3">
+<h2><span class="no">STEP 3 · CHAOXING EXPORT</span>学习通导出</h2>
+<p class="lead">这个页面是纯静态的，登录不了学习通（跨域限制），也绝不会要你的账号密码。请你自己在浏览器里登录学习通，再用下面的脚本把习题导出来。</p>
+<div class="card">
+<h3 style="margin:0 0 8px">怎么做（5 分钟）</h3>
+<ol class="tight">
+<li>在电脑浏览器安装 <b>Tampermonkey</b> 扩展（Edge / Chrome 应用商店免费装）。</li>
+<li>下载本项目里的导出脚本 <a href="chaoxing-export.user.js" download><b>chaoxing-export.user.js</b></a>，用 Tampermonkey 安装（点链接后按提示点“安装”）。</li>
+<li>在浏览器里<strong>自己登录学习通</strong>，打开这门课，随便打开一个有习题的页面：章节测验、作业、考试都行。</li>
+<li>页面右下角会出现 <b>「导出本页习题（JSON）」</b> 按钮，点一下就下载一个 JSON 文件。每个有题的页面都导一次（2.3、2.4、4.1……各导一遍）。</li>
+<li>把导出的 JSON 文件（可以一次选多个）在下面导入。</li>
+</ol>
+<div class="warn"><b>注意：</b>脚本只读你已经打开的页面，不登录、不存密码、不上传、不自动答题、不自动提交、不刷视频。如果某页识别不到题目，脚本会把页面全文一起导出，导入后按下面的“页面全文”方式整理。</div>
+</div>
+<div class="card">
+<div class="field">
+<label>导入导出的 JSON（可多选文件，也可直接粘贴）</label>
+<input type="file" id="importFiles" accept=".json,application/json" multiple>
+<textarea id="importText" placeholder="或把 JSON 内容粘贴到这里。支持：① 脚本导出的文件内容；② 题目数组 [{"id": "...", "q": "...", ...}]；③ {questions: [...]}。"></textarea>
+</div>
+<div class="toolbar">
+<button class="btn btn-primary" id="importBtn">解析导入</button>
+<button class="btn btn-ghost" onclick="loadExample()">没有学习通导出？先用示例题库试试（5 道题）</button>
+</div>
+<div id="importStatus" class="note" style="display:none"></div>
+<div class="field">
+<label>页面全文（备用：脚本没识别到题目时用）</label>
+<textarea id="pageText" placeholder="把学习通页面的文字全文粘贴到这里，每道题之间空一行。导入后会按行拆成题目草稿，题型和答案要到第 4、5 步再逐条确认——不要直接当题库用。"></textarea>
+<div class="toolbar"><button class="btn" id="pageTextBtn">按行拆成题目草稿</button></div>
+</div>
+</div>
+<div class="toolbar">
+<button class="btn btn-ghost" onclick="goStep(2)">← 上一步</button>
+<button class="btn btn-primary" onclick="goStep(4)">下一步 →</button>
+</div>
+</section>
+
+<!-- ============ 第 4 步：章节与习题整理 ============ -->
+<section class="step" id="step4">
+<h2><span class="no">STEP 4 · ORGANIZE</span>章节与习题整理</h2>
+<p class="lead">下面是导入的习题。带 <span class="pill g">官方答案</span> 的是学习通页面上直接显示了标准答案的题；带 <span class="pill red">页面未显示标准答案</span> 的是页面只显示了你的答案和 ✓/✗、没给标准答案的题——<b>绝不编造</b>，留到第 5 步人工核实。</p>
+<div class="card">
+<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;align-items:center">
+<strong id="qSummary">尚未导入习题</strong>
+<button class="btn btn-ghost" onclick="goStep(3)">回第 3 步导入</button>
+</div>
+<div class="progress"><i id="qProg"></i></div>
+<div id="chapterList"></div>
+</div>
+<div id="extBox" style="display:none">
+<div class="card">
+<h3 style="margin:0 0 8px">补充外部题（第 2 步选了“补充外部题库”）</h3>
+<p class="lead">外部题会标注“外部补充”，不冒充章节原题。写依据时只写法规/教材/标准原文。</p>
+<div class="field"><label>粘贴外部题 JSON（题目数组，和 questions.schema.json 同格式）</label>
+<textarea id="extJson" placeholder='[{"id":"e1","src":"ext","type":"single","tag":"外部补充 · 单选","q":"……","opts":["A","B","C","D"],"ans":[1],"exp":"依据：……"}]'></textarea></div>
+<div class="toolbar"><button class="btn" id="extJsonBtn">导入这批外部题</button></div>
+<div class="field"><label>或逐条添加</label></div>
+<div class="field"><label>题干 *</label><textarea id="extQ" style="min-height:70px" placeholder="题干。填空题用（ ）表示空。"></textarea></div>
+<div class="field"><label>题型</label>
+<select id="extType">
+<option value="single">单选</option><option value="multi">多选</option>
+<option value="judge">判断</option><option value="fill">填空</option>
+<option value="short">简答</option><option value="calc">计算</option>
+</select></div>
+<div class="field"><label>选项（单选/多选/判断用，一行一个；判断填“对/错”两行）</label>
+<textarea id="extOpts" style="min-height:80px" placeholder="选项A&#10;选项B&#10;选项C&#10;选项D"></textarea></div>
+<div class="field"><label>答案 *</label><input type="text" id="extAns" placeholder="单选/多选/判断：填选项字母，如 B 或 A、C；填空：各空答案用、分隔；简答/计算：直接写答案文字">
+<div class="hint">答案必须是核实过的（法规/教材/标准原文）。没把握就空着，留到第 5 步核实。</div></div>
+<div class="field"><label>依据（法规/教材/标准原文）</label><input type="text" id="extExp" placeholder="如：《化妆品监督管理条例》第22条"></div>
+<div class="toolbar"><button class="btn btn-primary" id="extAddBtn">添加这道外部题</button></div>
+<div id="extStatus" class="note" style="display:none"></div>
+</div>
+</div>
+<div class="card">
+<h3 style="margin:0 0 8px">知识点总结（可选，会放进题库页顶部）</h3>
+<div class="field"><label>按章节写，每行一章：章标题 | 要点1；要点2</label>
+<textarea id="knowInput" placeholder="第 1 章 · 绪论 | 化妆品定义：……；化妆品历史：……&#10;第 2 章 · 化妆品基础 | 特殊化妆品实行注册管理，普通化妆品实行备案管理"></textarea>
+<div class="hint">不写也可以，生成页会按导入的章节自动列出各章题数。</div></div>
+</div>
+<div id="qList"></div>
+<div class="toolbar">
+<button class="btn btn-ghost" onclick="goStep(3)">← 上一步</button>
+<button class="btn btn-primary" onclick="goStep(5)">下一步：核实答案 →</button>
+</div>
+</section>
+
+<!-- ============ 第 5 步：答案核实 ============ -->
+<section class="step" id="step5">
+<h2><span class="no">STEP 5 · VERIFY</span>答案核实</h2>
+<p class="lead">下面是还没答案的题（学习通页面未显示标准答案）。每道题点开搜索链接自己查，把核实到的答案和依据原文贴回来，选好置信度。查不到、没把握的就留着——生成页会显示“页面未显示标准答案”，不会编一个答案放上去。</p>
+<div class="card">
+<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;align-items:center">
+<strong id="vSummary">没有待核实的题目</strong>
+<span>
+<button class="btn btn-ghost" id="exportPendingBtn">导出待核实清单 JSON</button>
+<button class="btn btn-ghost" id="exportVerifiedBtn">导出已核实答案 JSON</button>
+</span>
+</div>
+<div class="progress"><i id="vProg"></i></div>
+<div class="note">导出格式和 answers-searched.json 相同：<b>[{num, answer, basis, confidence, note}]</b>。confidence 填 high（高置信度）或 medium（中等置信度；页面会显示“依据待确认”）。</div>
+</div>
+<div id="vList"></div>
+<div class="toolbar">
+<button class="btn btn-ghost" onclick="goStep(4)">← 上一步</button>
+<button class="btn btn-primary" onclick="goStep(6)">下一步：生成题库页 →</button>
+</div>
+</section>
+
+<!-- ============ 第 6 步：生成题库页 ============ -->
+<section class="step" id="step6">
+<h2><span class="no">STEP 6 · GENERATE</span>生成题库页</h2>
+<p class="lead">用 deck-template.html（和现在这个化妆品题库同一套翻页模板）生成一个独立的 index.html，下载后放进你的题库仓库就能用。</p>
+<div class="card">
+<div class="field"><label>题库文件夹名（英文小写，一个课程一个文件夹）</label>
+<input type="text" id="fSlug" placeholder="如：huazhuangpin">
+<div class="hint">生成的文件名固定是 index.html，放在这个文件夹里，访问地址就是 https://你的用户名.github.io/tiku/<span id="slugPreview">文件夹名</span>/。</div></div>
+<div class="field"><label>题库页标题</label><input type="text" id="fTitle"></div>
+<div class="field"><label>题库页顶部小标签</label><input type="text" id="fBadge"></div>
+<div class="toolbar">
+<button class="btn btn-primary" id="genBtn">生成题库页</button>
+<button class="btn btn-ghost" id="dlQuestionsBtn">下载题库数据 questions.json</button>
+</div>
+<div id="genStatus" class="note" style="display:none"></div>
+<div id="genResult" style="display:none">
+<div class="toolbar">
+<button class="btn btn-primary" id="dlDeckBtn">下载生成的题库页 index.html</button>
+</div>
+<div class="note" id="genStats"></div>
+</div>
+</div>
+<div class="card">
+<h3 style="margin:0 0 8px">部署到 GitHub Pages（一次设置，以后每个课程照做）</h3>
+<ol class="tight">
+<li>在 GitHub 新建一个公开仓库，名字叫 <b>tiku</b>（已有就不用建）。</li>
+<li>仓库根目录放一个 index.html 当首页：列出各门课的链接（每门课一行，链到 <b>文件夹名/</b>）。</li>
+<li>把生成的 index.html 上传到仓库里以课程文件夹名新建的文件夹中（和第 6 步填的文件夹名一致）。</li>
+<li>仓库 Settings → Pages → Branch 选 main（或 master），保存。等一两分钟，访问 <b>https://你的用户名.github.io/tiku/文件夹名/</b> 就能打开。</li>
+<li>微信里直接打开这个链接就能刷题（不用下载任何 App）。</li>
+</ol>
+<p class="lead">参考例子：化妆品题库 <a href="https://gaon7455-cmd.github.io/tiku/huazhuangpin/" target="_blank" rel="noopener">gaon7455-cmd.github.io/tiku/huazhuangpin/</a>（《化妆品安全使用与功效评价》，87 题）。</p>
+</div>
+<div class="card">
+<h3 style="margin:0 0 8px">再加一门课</h3>
+<p class="lead">回到第 1 步重新走一遍（先点下面“清空当前进度”），生成新的 index.html，上传到仓库里新的文件夹，再在首页加一行链接。模板、脚本、流程都不用改。</p>
+<div class="toolbar">
+<button class="btn btn-ghost" onclick="goStep(1)">← 回到第 1 步</button>
+<button class="btn btn-danger" id="clearBtn">清空当前进度（本地保存的数据）</button>
+</div>
+</div>
+</section>
+
+<footer>
+tiku-builder · MIT 开源 · 全部处理在你的浏览器本地完成，不上传数据。<br>
+诚实底线：学习通页面未显示标准答案的题，生成页会写“页面未显示标准答案”；经网络核实的答案标注“参考答案（搜索核实）”，中等置信度显示“依据待确认”。不要把没核实的答案当标准答案用。
+</footer>
+</div>
+<script>
+'use strict';
+/* tiku-builder 向导页逻辑：纯前端，所有数据只存在内存 + 本地 localStorage，不上传。 */
+var LS_KEY = 'tiku-builder-v1';
+var S = {
+  course: { name: '', teacher: '', school: '', semester: '', courseId: '' },
+  supplement: 'course',
+  questions: [],   // 规范化后的题目（questions.schema.json 格式，另加 hasOfficial）
+  chapters: [],    // [{title, sections:[{title, count}]}]，由导入生成
+  verified: {},    // id -> {answer, basis, confidence, note}
+  knowText: '',
+  slug: '',
+  deckHtml: ''
+};
+
+function $(id) { return document.getElementById(id); }
+function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function save() {
+  try {
+    var copy = { course: S.course, supplement: S.supplement, questions: S.questions, chapters: S.chapters, verified: S.verified, knowText: S.knowText, slug: S.slug };
+    localStorage.setItem(LS_KEY, JSON.stringify(copy));
+  } catch (e) { /* 隐私模式等情况下存不了也不影响使用 */ }
+}
+function load() {
+  try {
+    var raw = localStorage.getItem(LS_KEY);
+    if (!raw) return;
+    var d = JSON.parse(raw);
+    if (d.course) S.course = d.course;
+    if (d.supplement) S.supplement = d.supplement;
+    if (d.questions) S.questions = d.questions;
+    if (d.chapters) S.chapters = d.chapters;
+    if (d.verified) S.verified = d.verified;
+    if (d.knowText) S.knowText = d.knowText;
+    if (d.slug) S.slug = d.slug;
+  } catch (e) { /* 存坏了就当没有 */ }
+}
+function showNote(el, html) { el.style.display = 'block'; el.innerHTML = html; }
+function typeName(t) { return { single: '单选', multi: '多选', fill: '填空', judge: '判断', short: '简答', calc: '计算', match: '连线', discuss: '讨论题' }[t] || t; }
+
+/* ---------- 步骤切换 ---------- */
+function goStep(n) {
+  document.querySelectorAll('section.step').forEach(function (s) { s.classList.remove('on'); });
+  var sec = $('step' + n);
+  if (sec) sec.classList.add('on');
+  document.querySelectorAll('#stepper .stepbtn').forEach(function (b) {
+    var k = +b.dataset.step;
+    b.classList.toggle('active', k === n);
+    b.classList.toggle('done', k < n);
+  });
+  if (n === 4) renderStep4();
+  if (n === 5) renderStep5();
+  if (n === 6) prepareStep6();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+document.querySelectorAll('#stepper .stepbtn').forEach(function (b) {
+  b.onclick = function () { goStep(+b.dataset.step); };
+});
+
+/* ---------- 第 1 步：课程信息 ---------- */
+function fillCourseForm() {
+  $('fCourse').value = S.course.name || '';
+  $('fTeacher').value = S.course.teacher || '';
+  $('fSchool').value = S.course.school || '';
+  $('fSemester').value = S.course.semester || '';
+  $('fCourseId').value = S.course.courseId || '';
+}
+function saveCourse() {
+  S.course.name = $('fCourse').value.trim();
+  S.course.teacher = $('fTeacher').value.trim();
+  S.course.school = $('fSchool').value.trim();
+  S.course.semester = $('fSemester').value.trim();
+  S.course.courseId = $('fCourseId').value.trim();
+  if (!S.slug && S.course.name) S.slug = slugify(S.course.name);
+  save();
+}
+function slugify(name) {
+  var map = { '化': 'hua', '妆': 'zhuang', '品': 'pin', '安': 'an', '全': 'quan', '使': 'shi', '用': 'yong', '与': 'yu', '功': 'gong', '效': 'xiao', '评': 'ping', '价': 'jia' };
+  var out = '';
+  for (var i = 0; i < name.length; i++) {
+    var ch = name[i];
+    if (/[a-z0-9]/i.test(ch)) out += ch.toLowerCase();
+    else if (map[ch]) out += map[ch];
+    else if (/\s/.test(ch)) out += '-';
+  }
+  out = out.replace(/-+/g, '-').replace(/^-|-$/g, '');
+  return out || 'course';
+}
+
+/* ---------- 第 1 步：OCR（Tesseract.js，失败就手动填） ---------- */
+var ocrFiles = [];
+$('ocrFiles').addEventListener('change', function () {
+  ocrFiles = Array.prototype.slice.call(this.files || []);
+  var th = $('ocrThumbs');
+  th.innerHTML = '';
+  ocrFiles.forEach(function (f) {
+    var img = document.createElement('img');
+    img.src = URL.createObjectURL(f);
+    img.alt = f.name;
+    th.appendChild(img);
+  });
+});
+function loadTesseract() {
+  return new Promise(function (resolve, reject) {
+    if (window.Tesseract) return resolve(window.Tesseract);
+    var sc = document.createElement('script');
+    sc.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    sc.onload = function () { resolve(window.Tesseract); };
+    sc.onerror = function () { reject(new Error('识别库加载失败（网络问题），请直接手动填写。')); };
+    document.head.appendChild(sc);
+    setTimeout(function () { if (!window.Tesseract) reject(new Error('识别库加载超时，请直接手动填写。')); }, 30000);
+  });
+}
+$('ocrBtn').onclick = function () {
+  if (!ocrFiles.length) { showNote($('ocrStatus'), '请先选课本照片（封面、目录、扉页都行）。没有照片也可以直接手动填写。'); return; }
+  var btn = $('ocrBtn');
+  btn.disabled = true;
+  showNote($('ocrStatus'), '正在加载识别库……（第一次需要联网下载中英文识别数据，比较大，请耐心等一会儿）');
+  loadTesseract().then(function (T) {
+    var done = 0, allText = [];
+    showNote($('ocrStatus'), '识别库已加载，正在识别第 1 / ' + ocrFiles.length + ' 张……');
+    var next = function () {
+      if (done >= ocrFiles.length) {
+        var joined = allText.join('\n');
+        $('ocrText').value = joined;
+        guessCourseFromText(joined);
+        showNote($('ocrStatus'), '识别完成，共 ' + ocrFiles.length + ' 张。请核对下面的课程信息（识别可能有错字，以手动改的为准）。');
+        btn.disabled = false;
+        return;
+      }
+      var f = ocrFiles[done];
+      showNote($('ocrStatus'), '正在识别第 ' + (done + 1) + ' / ' + ocrFiles.length + ' 张：' + esc(f.name) + '……');
+      T.recognize(f, 'chi_sim+eng').then(function (r) {
+        allText.push(r.data.text || '');
+        done++;
+        next();
+      }).catch(function (e) {
+        allText.push('');
+        done++;
+        showNote($('ocrStatus'), '第 ' + done + ' 张识别失败（' + esc(e.message || '未知错误') + '），继续下一张；也可以直接手动填写。');
+        next();
+      });
+    };
+    next();
+  }).catch(function (e) {
+    showNote($('ocrStatus'), '识别库加载失败：' + esc(e.message) + '请直接手动填写课程信息，不影响后面步骤。');
+    btn.disabled = false;
+  });
+};
+$('ocrSkip').onclick = function () { $('fCourse').focus(); };
+function guessCourseFromText(t) {
+  if (!t) return;
+  var m = t.match(/《([^》]{2,30})》/);
+  if (m && !$('fCourse').value) $('fCourse').value = m[1].trim();
+  var tm = t.match(/(?:教师|主讲|任课教师|授课教师)[：:\s]*([\u4e00-\u9fa5]{2,4})/);
+  if (tm && !$('fTeacher').value) $('fTeacher').value = tm[1];
+  var sm = t.match(/(\d{4}[-－—]\d{4}\s*(?:第[一二]学期|上学期|下学期|第一学期|第二学期))/);
+  if (sm && !$('fSemester').value) $('fSemester').value = sm[1].replace(/[－—]/g, '-');
+}
+
+/* ---------- 第 2 步：补充选择 ---------- */
+function setSupplement(v) {
+  S.supplement = v;
+  $('supCourse').classList.toggle('sel', v === 'course');
+  $('supBoth').classList.toggle('sel', v === 'both');
+  $('supNote').innerHTML = v === 'both'
+    ? '当前选择：<b>补充外部题库</b>。第 4 步会出现添加外部题的入口，外部题会标注“外部补充”。'
+    : '当前选择：<b>只用本课程习题</b>。随时可以回来改，第 4 步才会真正用到这个选择。';
+  save();
+}
+
+/* ---------- 第 3 步：导入与规范化 ---------- */
+function parseOfficialToAns(q) {
+  // 把页面显示的“正确答案”文字拆成 ans/ansText。拆不开就原样放 ansText，并标 hasOfficial。
+  var off = (q.officialAnswer || '').trim();
+  if (!off) return false;
+  var type = q.type || 'single';
+  if (type === 'single' || type === 'multi' || type === 'judge') {
+    var letters = off.match(/[A-JＡ-Ｊ]/g);
+    if (letters && letters.length) {
+      q.ans = letters.map(function (c) {
+        var code = c.charCodeAt(0);
+        return code >= 65 && code <= 74 ? code - 65 : code - 65345;
+      });
+      return true;
+    }
+    if (/^对$/.test(off)) { q.ans = [0]; return true; }
+    if (/^错$/.test(off)) { q.ans = [1]; return true; }
+    q.ansText = off;
+    return true;
+  }
+  if (type === 'fill') {
+    var parts = off.split(/[、；，,;]/).map(function (x) { return x.trim(); }).filter(Boolean);
+    if (parts.length > 1) { q.ans = parts; return true; }
+    q.ansText = off;
+    return true;
+  }
+  q.ansText = off; // short/calc/discuss/match：原样当文字答案
+  return true;
+}
+function normalizeImported(raw, sourceName) {
+  var list = [];
+  if (Array.isArray(raw)) list = raw;
+  else if (raw && Array.isArray(raw.questions)) list = raw.questions;
+  else if (raw && Array.isArray(raw.chapters)) {
+    raw.chapters.forEach(function (ch) {
+      (ch.sections || []).forEach(function (sec) {
+        (sec.questions || []).forEach(function (q) {
+          q.sec = q.sec || sec.title || ch.title || '';
+          list.push(q);
+        });
+      });
+    });
+  } else {
+    throw new Error('认不出这个 JSON：需要是题目数组，或 {questions:[...]}，或脚本导出的 {chapters:[...]}。');
+  }
+  var added = 0, noAns = 0;
+  var base = S.questions.length;
+  list.forEach(function (rq, i) {
+    if (!rq || !rq.q) return;
+    var q = {
+      id: (rq.id && String(rq.id)) || ('q' + (base + added + 1)),
+      src: 'orig',
+      type: rq.type || 'single',
+      tag: rq.tag || ((rq.sec ? rq.sec + ' · ' : '') + typeName(rq.type || 'single') + (rq.score ? ' · ' + rq.score + '分' : '')),
+      sec: rq.sec || '',
+      q: String(rq.q),
+      opts: rq.opts || undefined,
+      ans: rq.ans,
+      ansText: rq.ansText,
+      exp: rq.exp || '',
+      refTag: rq.refTag,
+      conf: rq.conf,
+      ing: rq.ing,
+      groups: rq.groups
+    };
+    if (!q.ans && !q.ansText && rq.officialAnswer) {
+      parseOfficialToAns(q);
+    }
+    q.hasOfficial = !!(q.ans || q.ansText);
+    if (!q.hasOfficial) noAns++;
+    // 同 id 去重：保留先导入的
+    if (S.questions.some(function (x) { return x.id === q.id; })) q.id = q.id + '_' + (base + added + 1);
+    S.questions.push(q);
+    added++;
+  });
+  if (raw && Array.isArray(raw.chapters)) {
+    S.chapters = raw.chapters.map(function (ch) {
+      return { title: ch.title || '', sections: (ch.sections || []).map(function (s) { return { title: s.title || '', count: (s.questions || []).length }; }) };
+    });
+  }
+  save();
+  return { added: added, noAns: noAns, source: sourceName };
+}
+function readImportText(txt, sourceName) {
+  var raw;
+  try { raw = JSON.parse(txt); }
+  catch (e) { throw new Error('JSON 解析失败：' + e.message + '。请检查括号、引号是否完整。'); }
+  return normalizeImported(raw, sourceName);
+}
+$('importBtn').onclick = function () {
+  var files = $('importFiles').files;
+  var txt = $('importText').value.trim();
+  var jobs = [];
+  if (files && files.length) {
+    Array.prototype.forEach.call(files, function (f) {
+      jobs.push(new Promise(function (res, rej) {
+        var r = new FileReader();
+        r.onload = function () { try { res(readImportText(r.result, f.name)); } catch (e) { rej(e); } };
+        r.onerror = function () { rej(new Error('读文件失败：' + f.name)); };
+        r.readAsText(f);
+      }));
+    });
+  } else if (txt) {
+    jobs.push(new Promise(function (res, rej) { try { res(readImportText(txt, '粘贴的 JSON')); } catch (e) { rej(e); } }));
+  } else {
+    showNote($('importStatus'), '请先选导出的 JSON 文件，或把 JSON 粘贴到框里。');
+    return;
+  }
+  Promise.all(jobs).then(function (rs) {
+    var total = rs.reduce(function (a, r) { return a + r.added; }, 0);
+    var noAns = rs.reduce(function (a, r) { return a + r.noAns; }, 0);
+    showNote($('importStatus'), '导入完成：新增 ' + total + ' 道题，其中 <b>' + noAns + ' 道页面未显示标准答案</b>（留到第 5 步核实）。当前题库共 ' + S.questions.length + ' 道题。');
+    renderStep4();
+  }).catch(function (e) {
+    showNote($('importStatus'), '导入失败：' + esc(e.message));
+  });
+};
+$('pageTextBtn').onclick = function () {
+  var t = $('pageText').value.trim();
+  if (!t) { showNote($('importStatus'), '请先把页面全文粘贴到框里。'); return; }
+  var chunks = t.split(/\n\s*\n/).map(function (x) { return x.trim(); }).filter(function (x) { return x.length > 4; });
+  var added = 0;
+  chunks.forEach(function (c) {
+    var firstLine = c.split('\n')[0].slice(0, 120);
+    S.questions.push({ id: 'q' + (S.questions.length + 1), src: 'orig', type: 'short', tag: '页面全文草稿 · 待确认', q: firstLine, ansText: '', exp: '', hasOfficial: false, _draft: c });
+    added++;
+  });
+  save();
+  showNote($('importStatus'), '已按空行拆成 ' + added + ' 道题目草稿（题型、答案都未确认）。请到第 4 步逐条检查，到第 5 步核实答案——草稿不要直接生成题库。');
+  renderStep4();
+};
+function loadExample() {
+  fetch('examples/sample-questions.json').then(function (r) {
+    if (!r.ok) throw new Error('示例文件读取失败（HTTP ' + r.status + '）。请用本地服务器打开本页，或直接下载仓库后用 file:// 打开第 3 步粘贴导入。');
+    return r.text();
+  }).then(function (txt) {
+    var res = readImportText(txt, '示例题库');
+    showNote($('importStatus'), '已导入示例题库：' + res.added + ' 道题（其中 ' + res.noAns + ' 道未显示标准答案）。可以先走通全流程，再换自己的课程数据。');
+    renderStep4();
+  }).catch(function (e) {
+    showNote($('importStatus'), '示例加载失败：' + esc(e.message));
+  });
+}
+
+/* ---------- 第 4 步：整理 ---------- */
+function renderStep4() {
+  $('extBox').style.display = S.supplement === 'both' ? 'block' : 'none';
+  $('knowInput').value = S.knowText || '';
+  var total = S.questions.length;
+  var withAns = S.questions.filter(function (q) { return q.hasOfficial || S.verified[q.id]; }).length;
+  $('qSummary').textContent = total
+    ? '共 ' + total + ' 道题 · 有答案 ' + withAns + ' 道 · 待核实 ' + (total - withAns) + ' 道'
+    : '尚未导入习题';
+  $('qProg').style.width = total ? (withAns / total * 100) + '%' : '0%';
+  var chHtml = '';
+  if (S.chapters.length) {
+    chHtml = '<div class="note"><b>章节：</b>' + S.chapters.map(function (ch) {
+      var secs = ch.sections.map(function (s) { return esc(s.title) + '（' + s.count + '题）'; }).join('、');
+      return '<br>· ' + esc(ch.title) + (secs ? '：' + secs : '');
+    }).join('') + '</div>';
+  }
+  $('chapterList').innerHTML = chHtml;
+  var html = '';
+  S.questions.forEach(function (q, i) {
+    var ok = q.hasOfficial || S.verified[q.id];
+    var v = S.verified[q.id];
+    html += '<div class="qrow' + (q.excluded ? ' excluded' : '') + '" id="qr-' + esc(q.id) + '">'
+      + '<div class="qmeta"><span class="pill b">' + typeName(q.type) + '</span> ' + esc(q.tag || '')
+      + (q.sec ? ' · ' + esc(q.sec) : '') + ' '
+      + (q.src === 'ext' ? '<span class="pill">外部补充</span>' : '<span class="pill">章节原题</span>') + ' '
+      + (ok ? '<span class="pill g">官方答案</span>' : '<span class="pill red">页面未显示标准答案</span>')
+      + (v ? ' <span class="pill g">已核实' + (v.confidence === 'medium' ? '（依据待确认）' : '') + '</span>' : '')
+      + (q.excluded ? ' <span class="pill">已排除</span>' : '') + '</div>'
+      + '<div class="qtext">' + (i + 1) + '. ' + esc(q.q) + '</div>'
+      + (q.opts ? '<div style="color:var(--muted)">选项：' + q.opts.map(function (o, j) { return String.fromCharCode(65 + j) + '. ' + esc(o); }).join('　') + '</div>' : '')
+      + (v ? '<div class="ans"><b>核实答案：</b>' + esc(v.answer) + '<br><b>依据：</b>' + esc(v.basis) + '</div>'
+        : (ok && (q.ansText || q.exp) ? '<div class="ans">' + esc(q.ansText || '') + (q.exp ? (q.ansText ? '\n' : '') + '依据：' + esc(q.exp) : '') + '</div>' : ''))
+      + '<div class="actions">'
+      + '<button class="btn btn-ghost" onclick="toggleExclude(\'' + esc(q.id) + '\')">' + (q.excluded ? '恢复本题' : '排除本题') + '</button>'
+      + '<button class="btn btn-ghost" onclick="removeQuestion(\'' + esc(q.id) + '\')">删除</button>'
+      + (!ok ? '<button class="btn" onclick="goStep(5)">去第 5 步核实</button>' : '')
+      + '</div></div>';
+  });
+  $('qList').innerHTML = html || '<div class="note">还没有题目。请先到第 3 步导入学习通导出文件，或用示例题库试试。</div>';
+}
+function toggleExclude(id) {
+  var q = S.questions.find(function (x) { return x.id === id; });
+  if (q) { q.excluded = !q.excluded; save(); renderStep4(); }
+}
+function removeQuestion(id) {
+  if (!confirm('确定删除这道题吗？')) return;
+  S.questions = S.questions.filter(function (x) { return x.id !== id; });
+  delete S.verified[id];
+  save();
+  renderStep4();
+}
+$('knowInput').addEventListener('input', function () { S.knowText = this.value; save(); });
+
+/* ---------- 第 4 步：外部题 ---------- */
+$('extJsonBtn').onclick = function () {
+  var txt = $('extJson').value.trim();
+  if (!txt) { showNote($('extStatus'), '请先粘贴外部题 JSON。'); return; }
+  try {
+    var arr = JSON.parse(txt);
+    if (!Array.isArray(arr)) throw new Error('需要是题目数组 [...]。');
+    var added = 0;
+    arr.forEach(function (rq) {
+      if (!rq || !rq.q) return;
+      rq.src = 'ext';
+      rq.hasOfficial = !!(rq.ans || rq.ansText);
+      if (S.questions.some(function (x) { return x.id === rq.id; })) rq.id = rq.id + '_ext' + added;
+      S.questions.push(rq);
+      added++;
+    });
+    save();
+    showNote($('extStatus'), '已导入 ' + added + ' 道外部题。');
+    $('extJson').value = '';
+    renderStep4();
+  } catch (e) { showNote($('extStatus'), '导入失败：' + esc(e.message)); }
+};
+$('extAddBtn').onclick = function () {
+  var qtext = $('extQ').value.trim();
+  var type = $('extType').value;
+  var ansRaw = $('extAns').value.trim();
+  if (!qtext) { showNote($('extStatus'), '请先写题干。'); return; }
+  var q = { id: 'e' + (S.questions.filter(function (x) { return x.src === 'ext'; }).length + 1), src: 'ext', type: type, tag: '外部补充 · ' + typeName(type), q: qtext, exp: $('extExp').value.trim(), hasOfficial: false };
+  if (type === 'single' || type === 'multi' || type === 'judge') {
+    q.opts = $('extOpts').value.split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
+    if (q.opts.length < 2) { showNote($('extStatus'), '选择/判断题至少要填 2 个选项（一行一个）。'); return; }
+    var letters = ansRaw.match(/[A-JＡ-Ｊ]/g);
+    if (letters) q.ans = letters.map(function (c) { var n = c.charCodeAt(0); return n >= 65 && n <= 74 ? n - 65 : n - 65345; });
+    else if (/^对$/.test(ansRaw)) q.ans = [0];
+    else if (/^错$/.test(ansRaw)) q.ans = [1];
+  } else if (type === 'fill') {
+    if (ansRaw) q.ans = ansRaw.split(/[、；，,;]/).map(function (x) { return x.trim(); }).filter(Boolean);
+  } else {
+    if (ansRaw) q.ansText = ansRaw;
+  }
+  q.hasOfficial = !!(q.ans || q.ansText);
+  S.questions.push(q);
+  save();
+  showNote($('extStatus'), '已添加 1 道外部题（' + (q.hasOfficial ? '有答案' : '暂无答案，请到第 5 步核实') + '）。');
+  ['extQ', 'extOpts', 'extAns', 'extExp'].forEach(function (id) { $(id).value = ''; });
+  renderStep4();
+};
+
+/* ---------- 第 5 步：答案核实 ---------- */
+function pendingList() {
+  return S.questions.filter(function (q) { return !q.excluded && !q.hasOfficial && !S.verified[q.id]; });
+}
+function renderStep5() {
+  var pend = pendingList();
+  var total = S.questions.filter(function (q) { return !q.excluded; }).length;
+  var done = total - pend.length;
+  $('vSummary').textContent = total
+    ? '待核实 ' + pend.length + ' 道 · 已有答案/已核实 ' + done + ' 道'
+    : '没有题目可核实';
+  $('vProg').style.width = total ? (done / total * 100) + '%' : '0%';
+  var html = '';
+  pend.forEach(function (q, i) {
+    var query = encodeURIComponent((S.course.name ? S.course.name + ' ' : '') + q.q.slice(0, 60));
+    html += '<div class="qrow" id="vr-' + esc(q.id) + '">'
+      + '<div class="qmeta"><span class="pill b">' + typeName(q.type) + '</span> ' + esc(q.tag || '') + (q.sec ? ' · ' + esc(q.sec) : '') + ' <span class="pill red">页面未显示标准答案</span></div>'
+      + '<div class="qtext">' + (i + 1) + '. ' + esc(q.q) + '</div>'
+      + (q.opts ? '<div style="color:var(--muted)">选项：' + q.opts.map(function (o, j) { return String.fromCharCode(65 + j) + '. ' + esc(o); }).join('　') + '</div>' : '')
+      + '<div class="actions">'
+      + '<a class="btn btn-ghost" href="https://www.bing.com/search?q=' + query + '" target="_blank" rel="noopener">Bing 搜索</a>'
+      + '<a class="btn btn-ghost" href="https://www.google.com/search?q=' + query + '" target="_blank" rel="noopener">Google 搜索</a>'
+      + '</div>'
+      + '<div class="field"><label>核实到的答案 *（按题型：选择填字母如 B；填空各空用、分隔；简答/计算写文字）</label>'
+      + '<textarea id="va-' + esc(q.id) + '" style="min-height:70px" placeholder="查不到、没把握就空着，不要猜。"></textarea></div>'
+      + '<div class="field"><label>依据 *（法规/教材/课件原文，如《化妆品监督管理条例》第3条）</label>'
+      + '<input type="text" id="vb-' + esc(q.id) + '" placeholder="只写能查到的出处，不要写“大概是”“应该是”。"></div>'
+      + '<div class="field"><label>置信度</label><select id="vc-' + esc(q.id) + '">'
+      + '<option value="high">高置信度（法规/教材原文明确写明）</option>'
+      + '<option value="medium">中等置信度（只找到间接依据；页面会显示“依据待确认”）</option>'
+      + '</select></div>'
+      + '<div class="toolbar"><button class="btn btn-primary" onclick="saveVerify(\'' + esc(q.id) + '\')">保存这道题的核实结果</button></div>'
+      + '</div>';
+  });
+  $('vList').innerHTML = html || '<div class="note">没有待核实的题目：所有题都有官方答案或已经核实。可以直接去第 6 步生成。</div>';
+}
+function saveVerify(id) {
+  var q = S.questions.find(function (x) { return x.id === id; });
+  if (!q) return;
+  var ansRaw = $('va-' + id).value.trim();
+  var basis = $('vb-' + id).value.trim();
+  var conf = $('vc-' + id).value;
+  if (!ansRaw || !basis) { alert('答案和依据都要填。查不到就先空着，不要猜。'); return; }
+  var type = q.type;
+  if (type === 'single' || type === 'multi' || type === 'judge') {
+    var letters = ansRaw.match(/[A-JＡ-Ｊ]/g);
+    if (letters) q.ans = letters.map(function (c) { var n = c.charCodeAt(0); return n >= 65 && n <= 74 ? n - 65 : n - 65345; });
+    else if (/^对$/.test(ansRaw)) q.ans = [0];
+    else if (/^错$/.test(ansRaw)) q.ans = [1];
+    else { alert('选择/判断题的答案请填选项字母（如 B）或 对/错。'); return; }
+  } else if (type === 'fill') {
+    q.ans = ansRaw.split(/[、；，,;]/).map(function (x) { return x.trim(); }).filter(Boolean);
+  } else {
+    q.ansText = ansRaw;
+  }
+  q.exp = basis;
+  q.refTag = '搜索核实';
+  q.conf = conf;
+  S.verified[id] = { answer: ansRaw, basis: basis, confidence: conf, note: '' };
+  save();
+  renderStep5();
+}
+function downloadJson(filename, obj) {
+  var blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+$('exportPendingBtn').onclick = function () {
+  var list = pendingList().map(function (q, i) {
+    return { num: i, answer: '', basis: '', confidence: '', note: '待核实：' + q.q.slice(0, 60) };
+  });
+  downloadJson('pending-verify.json', list);
+};
+$('exportVerifiedBtn').onclick = function () {
+  var list = S.questions.filter(function (q) { return S.verified[q.id]; }).map(function (q, i) {
+    var v = S.verified[q.id];
+    return { num: i, answer: v.answer, basis: v.basis, confidence: v.confidence, note: '' };
+  });
+  downloadJson('answers-searched.json', list);
+};
+
+/* ---------- 第 6 步：生成 ---------- */
+function buildKnowHtml() {
+  if (S.knowText && S.knowText.trim()) {
+    var lines = S.knowText.split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
+    return lines.map(function (ln) {
+      var parts = ln.split('|');
+      var title = parts[0].trim();
+      var points = (parts[1] || '').split(/[；;]/).map(function (x) { return x.trim(); }).filter(Boolean);
+      return '<details><summary>' + esc(title) + '</summary><div class="body"><ul class="tight">'
+        + points.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul></div></details>';
+    }).join('\n');
+  }
+  if (S.chapters.length) {
+    return S.chapters.map(function (ch) {
+      var secs = ch.sections.map(function (s) { return '<li>' + esc(s.title) + '（' + s.count + '题）</li>'; }).join('');
+      return '<details><summary>' + esc(ch.title) + '</summary><div class="body"><ul class="tight">' + secs + '</ul></div></details>';
+    }).join('\n');
+  }
+  return '<div class="card">暂无知识点总结：导入学习通导出文件后，这里会按章节自动列出各章题数；也可以在第 4 步“知识点总结”里手动写。</div>';
+}
+function buildKnowLead() {
+  var nCh = S.chapters.length;
+  var nSec = S.chapters.reduce(function (a, ch) { return a + ch.sections.length; }, 0);
+  if (nCh) return '按 ' + nCh + ' 章 ' + nSec + ' 节整理。点开每章查看。';
+  return '按课程章节整理。点开每章查看。';
+}
+function cleanQuestionForExport(q) {
+  var out = { id: q.id, src: q.src, type: q.type, tag: q.tag, q: q.q };
+  if (q.sec) out.sec = q.sec;
+  if (q.refTag) out.refTag = q.refTag;
+  if (q.conf) out.conf = q.conf;
+  if (q.opts) out.opts = q.opts;
+  if (q.ans) out.ans = q.ans;
+  if (q.ansText) out.ansText = q.ansText;
+  if (q.exp) out.exp = q.exp;
+  if (q.ing) out.ing = q.ing;
+  if (q.groups) out.groups = q.groups;
+  return out;
+}
+function prepareStep6() {
+  var name = S.course.name || '未命名课程';
+  $('fTitle').value = name;
+  var badge = [S.course.school, S.course.semester].filter(Boolean).join(' · ');
+  $('fBadge').value = badge || name;
+  if (!$('fSlug').value) $('fSlug').value = S.slug || slugify(name);
+  $('slugPreview').textContent = $('fSlug').value || '文件夹名';
+}
+$('fSlug').addEventListener('input', function () { $('slugPreview').textContent = this.value || '文件夹名'; });
+$('genBtn').onclick = function () {
+  var included = S.questions.filter(function (q) { return !q.excluded; });
+  if (!included.length) { showNote($('genStatus'), '题库里还没有题目。请先到第 3 步导入，第 5 步核实答案。'); return; }
+  var unanswered = included.filter(function (q) { return !q.hasOfficial && !S.verified[q.id]; }).length;
+  saveCourse();
+  S.slug = $('fSlug').value.trim() || slugify(S.course.name || 'course');
+  var title = $('fTitle').value.trim() || S.course.name || '题库';
+  var badge = $('fBadge').value.trim();
+  showNote($('genStatus'), '正在读取 deck-template.html……');
+  fetch('deck-template.html').then(function (r) {
+    if (!r.ok) throw new Error('模板读取失败（HTTP ' + r.status + '）。');
+    return r.text();
+  }).then(function (tpl) {
+    var qs = included.map(cleanQuestionForExport);
+    var nOrig = qs.filter(function (q) { return q.src === 'orig'; }).length;
+    var nExt = qs.length - nOrig;
+    var html = tpl
+      .split('{{COURSE_TITLE}}').join(esc(title))
+      .split('{{COURSE_BADGE}}').join(esc(badge))
+      .split('{{KNOW_LEAD}}').join(esc(buildKnowLead()))
+      .split('{{KNOW_HTML}}').join(buildKnowHtml())
+      .split('{{TOTAL}}').join(String(qs.length))
+      .split('{{N_ORIG}}').join(String(nOrig))
+      .split('{{N_EXT}}').join(String(nExt))
+      .replace('var QUESTIONS = /*__TIKU_QUESTIONS__*/[];', 'var QUESTIONS = ' + JSON.stringify(qs) + ';');
+    if (html.indexOf('{{') !== -1 && /{{[A-Z_]+}}/.test(html)) {
+      throw new Error('模板里还有没替换的占位符，请检查 deck-template.html 是否为最新版。');
+    }
+    S.deckHtml = html;
+    save();
+    $('genResult').style.display = 'block';
+    $('genStats').innerHTML = '已生成：共 <b>' + qs.length + '</b> 道题（章节原题 ' + nOrig + ' 道，外部补充 ' + nExt + ' 道）'
+      + (unanswered ? '；其中 <b>' + unanswered + ' 道页面未显示标准答案</b>，生成页会如实标注，不会编答案。' : '；全部题目都有答案。')
+      + '<br>文件大小约 ' + (new Blob([html]).size / 1024).toFixed(1) + ' KB。下载后按下面步骤部署。';
+    showNote($('genStatus'), '生成成功。点下面按钮下载 index.html。');
+  }).catch(function (e) {
+    showNote($('genStatus'), '生成失败：' + esc(e.message) + '如果你是用 file:// 直接打开本页，浏览器不允许读取模板文件。请用本地服务器打开（例如在项目目录运行 python3 -m http.server），或把 deck-template.html 的内容手动贴到生成器里。');
+  });
+};
+$('dlDeckBtn').onclick = function () {
+  if (!S.deckHtml) { showNote($('genStatus'), '请先点“生成题库页”。'); return; }
+  var blob = new Blob([S.deckHtml], { type: 'text/html;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'index.html';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+};
+$('dlQuestionsBtn').onclick = function () {
+  var qs = S.questions.filter(function (q) { return !q.excluded; }).map(cleanQuestionForExport);
+  if (!qs.length) { showNote($('genStatus'), '题库里还没有题目。'); return; }
+  downloadJson('questions.json', qs);
+};
+$('clearBtn').onclick = function () {
+  if (!confirm('确定清空当前进度吗？课程信息、导入的题目、核实结果都会删掉（只清浏览器本地保存，不动任何文件）。')) return;
+  try { localStorage.removeItem(LS_KEY); } catch (e) {}
+  S.course = { name: '', teacher: '', school: '', semester: '', courseId: '' };
+  S.supplement = 'course';
+  S.questions = [];
+  S.chapters = [];
+  S.verified = {};
+  S.knowText = '';
+  S.slug = '';
+  S.deckHtml = '';
+  fillCourseForm();
+  setSupplement('course');
+  $('ocrText').value = '';
+  $('importText').value = '';
+  $('pageText').value = '';
+  $('genResult').style.display = 'none';
+  goStep(1);
+};
+
+/* ---------- 启动 ---------- */
+load();
+fillCourseForm();
+setSupplement(S.supplement || 'course');
+if (S.questions.length) renderStep4();
+</script>
+</body>
+</html>

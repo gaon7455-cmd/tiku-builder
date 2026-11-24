@@ -1,0 +1,403 @@
+<!-- tiku-builder deck template
+     由题库生成器（index.html 第 6 步）读取并填充后生成独立题库页。
+     占位符：{{COURSE_TITLE}} {{COURSE_BADGE}} {{KNOW_LEAD}} {{KNOW_HTML}}
+     {{TOTAL}} {{N_ORIG}} {{N_EXT}} ，以及 var QUESTIONS 一行的题库 JSON 占位符。
+     本文件直接打开时题库为空（QUESTIONS=[]），请用生成器生成后再使用。
+     未显示官方答案的题会显示“页面未显示标准答案”，绝不编造答案。 -->
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:,">
+<title>{{COURSE_TITLE}} · 题库</title>
+<style>
+:root, :root[data-theme="paper"]{
+  --bg:#ffffff; --surface:#ffffff; --surface2:#f6f6f6; --chip:#efefef;
+  --ink:#141414; --muted:#5c5c5c; --line:#d8d8d8;
+  --hero-bg:#111111; --hero-ink:#ffffff;
+  --solid:#141414; --solid-ink:#ffffff;
+  --key:#c62828; --key-solid:#ff6f60;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --bg:#0e0e0e; --surface:#171717; --surface2:#1f1f1f; --chip:#262626;
+  --ink:#f2f2f2; --muted:#a8a8a8; --line:#363636;
+  --hero-bg:#000000; --hero-ink:#ffffff;
+  --solid:#f2f2f2; --solid-ink:#111111;
+  --key:#ff5252; --key-solid:#c62828;
+  color-scheme:dark;
+}
+:root[data-theme="gray"]{
+  --bg:#ececec; --surface:#ffffff; --surface2:#f4f4f4; --chip:#e3e3e3;
+  --ink:#141414; --muted:#5c5c5c; --line:#d0d0d0;
+  --hero-bg:#141414; --hero-ink:#ffffff;
+  --solid:#141414; --solid-ink:#ffffff;
+  --key:#c62828; --key-solid:#ff6f60;
+  color-scheme:light;
+}
+.key{color:var(--key);font-weight:800}
+.hero .key{color:#ff6f60}
+.cheat ol li>strong{color:var(--key)}
+.formula .big{color:var(--key-solid)}
+*{box-sizing:border-box} html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans SC",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.7;font-size:16px}
+a{color:var(--ink);text-underline-offset:3px} button{min-height:44px;font-family:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:0 18px 56px}
+#deck{padding-bottom:calc(150px + env(safe-area-inset-bottom,0px))}
+.themebar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:16px 0 14px}
+.themebar .tlabel{font-weight:800;font-size:14px;margin-right:2px}
+.tbtn{border:1.5px solid var(--ink);background:transparent;color:var(--ink);border-radius:999px;padding:9px 16px;font-weight:700;cursor:pointer;min-height:44px;font-size:14px}
+.tbtn.active{background:var(--solid);color:var(--solid-ink)}
+.hero{background:var(--hero-bg);color:var(--hero-ink);margin:0 -18px;padding:0;border-bottom:1px solid var(--line)}
+.hero-in{max-width:1080px;margin:0 auto;padding:28px 18px 26px;display:grid;grid-template-columns:1fr;gap:22px}
+.hero h1{font-family:"Noto Serif SC",serif;font-size:32px;line-height:1.25;margin:6px 0 8px;font-weight:900}
+.hero .sub{opacity:.92;font-size:15px}
+.badge{display:inline-block;background:#ffffff;color:#111111;font-weight:800;font-size:12px;padding:4px 10px;border-radius:999px;letter-spacing:.04em}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.meta span{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);padding:6px 10px;border-radius:999px;font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}
+.stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);border-radius:10px;padding:10px 12px}
+.stat b{display:block;font-size:22px;line-height:1.2} .stat small{opacity:.85}
+.nav{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--line);margin:0 -18px;padding:0 18px}
+.nav-in{max-width:1080px;margin:0 auto;display:flex;gap:6px;overflow-x:auto;padding:10px 0;scrollbar-width:none}
+.nav-in::-webkit-scrollbar{display:none}
+.nav a{flex:0 0 auto;text-decoration:none;color:var(--ink);font-weight:700;font-size:14px;padding:10px 14px;border-radius:999px;background:var(--chip);min-height:40px;display:flex;align-items:center}
+.nav a:hover{outline:1.5px solid var(--ink)}
+section{margin-top:30px}
+h2{font-family:"Noto Serif SC",serif;font-size:24px;margin:0 0 6px;line-height:1.3;font-weight:900}
+h2 .no{color:var(--muted);font-family:"Noto Sans SC",sans-serif;font-size:13px;display:block;letter-spacing:.12em;font-weight:700}
+.lead{color:var(--muted);margin:0 0 16px;font-size:15px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.formula{background:var(--solid);color:var(--solid-ink);border-radius:12px;padding:18px;text-align:center}
+.formula .big{font-size:22px;font-weight:900;letter-spacing:.02em;margin:8px 0}
+.formula p{opacity:.85;font-size:14px;margin:4px 0}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.kv div{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:12px}
+.kv b{font-size:18px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left;vertical-align:top}
+th{font-size:13px;color:var(--muted);background:var(--surface2)}
+tr:last-child td{border-bottom:none}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid var(--line);background:var(--surface2);color:var(--muted)}
+.pill.g{background:var(--solid);color:var(--solid-ink);border-color:var(--solid)}
+.pill.r{background:transparent;color:var(--muted);border:1px dashed var(--muted)}
+details{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden}
+details summary{cursor:pointer;padding:16px 18px;font-weight:800;font-size:16px;min-height:52px;display:flex;align-items:center;justify-content:space-between;gap:12px;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details .body{padding:0 18px 18px;border-top:1px solid var(--line)}
+details .body p,details .body li{font-size:15px}
+ul.tight{margin:8px 0;padding-left:20px} ul.tight li{margin:4px 0}
+.axis{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.axis div{border-radius:10px;padding:14px;text-align:center;font-weight:700}
+.axis .l{background:var(--solid);color:var(--solid-ink)}
+.axis .a{background:var(--surface2);border:1px solid var(--line)}
+.axis .b{background:var(--chip)}
+.calc{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.calc label{font-size:13px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px}
+.calc input,.calc select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--ink);font-size:16px;min-height:48px}
+.calc-out{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:14px}
+.btn{border:1.5px solid var(--ink);border-radius:999px;padding:12px 18px;font-weight:800;cursor:pointer;font-size:15px;min-height:48px;background:transparent;color:var(--ink)}
+.btn-primary{background:var(--solid);color:var(--solid-ink)}
+.btn-ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn-amber{background:var(--solid);color:var(--solid-ink)}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.chipbtn{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:10px 14px;font-weight:700;cursor:pointer;min-height:44px}
+.chipbtn.active{background:var(--solid);color:var(--solid-ink);border-color:var(--solid)}
+.progress{height:10px;background:var(--chip);border-radius:999px;overflow:hidden;margin:10px 0}
+.progress i{display:block;height:100%;background:var(--ink);width:0;transition:width .3s}
+.qcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:14px}
+.qcard h3{margin:0 0 4px;font-size:16px;line-height:1.55}
+.qmeta{font-size:12px;color:var(--muted);margin-bottom:10px}
+.opts{display:grid;gap:8px}
+.opt{width:100%;text-align:left;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:12px 14px;cursor:pointer;font-size:15px;line-height:1.5;min-height:48px}
+.opt.correct{border-color:var(--solid);background:var(--solid);color:var(--solid-ink);font-weight:700}
+.opt.wrong{border-style:dashed;border-color:var(--muted);background:var(--surface2);color:var(--muted)}
+.ans{display:none;margin-top:12px;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:14px}
+.ans.show{display:block}
+.note{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:14px;font-size:14px}
+.steps{display:grid;gap:10px}
+.step{display:flex;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
+.step n{flex:0 0 36px;width:36px;height:36px;border-radius:50%;background:var(--solid);color:var(--solid-ink);display:flex;align-items:center;justify-content:center;font-weight:900}
+.cheat{background:var(--surface);border:2px solid var(--ink);border-radius:12px;padding:18px}
+.cheat li{margin:6px 0;font-size:15px}
+footer{margin-top:36px;border-top:1px solid var(--line);padding-top:18px;color:var(--muted);font-size:13px}
+footer a{word-break:break-all}
+.source-list{columns:1; font-size:13px}
+@media(max-width:720px){
+ .hero-in{grid-template-columns:1fr}
+ .grid2,.grid3,.calc{grid-template-columns:1fr} .stats{grid-template-columns:1fr 1fr} .kv{grid-template-columns:1fr}
+ .axis{grid-template-columns:1fr} h2{font-size:21px} .hero h1{font-size:27px}
+ table{font-size:13px} th,td{padding:8px 5px;word-break:break-word;overflow-wrap:anywhere}
+ .nav-in{flex-wrap:wrap;overflow-x:visible}
+}
+.showbox{margin-top:12px;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:14px}
+.showbox .rec{font-weight:800}
+.warn{color:var(--key);font-weight:800}
+.note{font-size:13px;color:var(--muted)}
+.ing{font-size:13px;color:var(--muted);background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-top:8px;line-height:1.7;word-break:break-word}
+.qsub{font-size:14px;color:var(--muted);margin:0 0 10px}
+details .qcard{margin-bottom:12px}
+.secnote{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--key);border-radius:10px;padding:14px 16px;font-size:14px;line-height:1.7}
+
+:root[data-theme="green"]{
+  --bg:#dcead7; --surface:#f2f8ef; --surface2:#e6f0e0; --chip:#d4e4cd;
+  --ink:#1c2b18; --muted:#4c6247; --line:#b3c9ab;
+  --hero-bg:#1c2b18; --hero-ink:#f2f8ef;
+  --solid:#1c2b18; --solid-ink:#f2f8ef;
+  --key:#8a1c1c; --key-solid:#c62828;
+  color-scheme:light;
+}
+
+.gridbtns{display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
+.gridbtns button{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:10px 0;font-weight:700;cursor:pointer;min-height:44px;font-size:14px}
+.gridbtns button.done{background:var(--solid);color:var(--solid-ink);border-color:var(--solid)}
+.gridbtns button.wrong{border-color:var(--key);color:var(--key)}
+.gridbtns button.cur{outline:2px solid var(--ink);outline-offset:1px}
+@media(max-width:720px){.gridbtns{grid-template-columns:repeat(6,1fr)}}
+.anslist{margin:6px 0;padding-left:20px}
+.anslist li{margin:3px 0}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="themebar"><span class="tlabel">配色</span>
+<button class="tbtn active" data-theme="dark" onclick="setTheme('dark',this)">黑底白字</button>
+<button class="tbtn" data-theme="paper" onclick="setTheme('paper',this)">白底黑字</button>
+<button class="tbtn" data-theme="gray" onclick="setTheme('gray',this)">浅灰底</button>
+<button class="tbtn" data-theme="green" onclick="setTheme('green',this)">护眼绿</button>
+<span class="note">配色会记住你的选择，下次打开还是它。</span>
+</div>
+<div class="hero"><div class="hero-in">
+<span class="badge">{{COURSE_BADGE}}</span>
+<h1>{{COURSE_TITLE}}<span style="display:block;font-size:20px;margin-top:6px">题库</span></h1>
+</div>
+</div></div>
+<div class="nav"><div class="nav-in">
+<a href="#know">📚 知识点总结</a><a href="#deck">✍️ 开始刷题（{{TOTAL}}题）</a>
+</div></div>
+
+<section id="know">
+<h2><span class="no">KNOWLEDGE · 按课件整理</span>知识点总结</h2>
+<p class="lead">{{KNOW_LEAD}}</p>
+{{KNOW_HTML}}
+</section>
+
+<section id="deck">
+<h2><span class="no">PRACTICE · 左右翻页 · 一次一道</span>开始刷题</h2>
+<div class="card">
+<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;align-items:center"><strong id="deckScore">已答 0 / {{TOTAL}} 题 · 答对 0 题</strong><button class="btn btn-ghost" onclick="resetDeck()">↺ 重新开始</button></div>
+<div class="progress"><i id="deckProg"></i></div>
+<div class="toolbar" id="deckFilters">
+<button class="chipbtn active" data-f="all">全部 {{TOTAL}}</button>
+<button class="chipbtn" data-f="orig">章节原题 {{N_ORIG}}</button>
+<button class="chipbtn" data-f="ext">外部补充 {{N_EXT}}</button>
+<button class="chipbtn" data-f="unanswered">只看未答</button>
+<button class="chipbtn" data-f="wrong">只看答错</button>
+</div>
+</div>
+<div id="deckCard" style="margin-top:14px"></div>
+<div style="display:flex;gap:10px;margin-top:14px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+<button class="btn" style="flex:1;white-space:nowrap" onclick="prevCard()">← 上一题</button>
+<span id="deckCounter" style="font-weight:800;white-space:nowrap">第 1 / {{TOTAL}} 题</span>
+<button class="btn btn-ghost" id="gridBtn" style="flex:1;white-space:nowrap" onclick="toggleGrid()">题号</button>
+<button class="btn btn-primary" style="flex:1;white-space:nowrap" onclick="nextCard()">下一题 →</button>
+</div>
+<div id="deckGrid" style="display:none;margin-top:12px"></div>
+</section>
+
+<script>
+
+var QUESTIONS = /*__TIKU_QUESTIONS__*/[];
+var state = {};
+function typeName(t){return {single:'单选',multi:'多选',fill:'填空',judge:'判断',short:'简答',calc:'计算',match:'连线',discuss:'讨论题'}[t]||t}
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function fmtAnsText(s){ return String(s).replace(/([。；])(\d+[）])/g,'$1\n$2'); }
+function hasAns(q){ return !!q.ansText||(q.ans&&(q.ans.length||Object.keys(q.ans).length)); }
+function ansHtml(q){
+  if(!hasAns(q)) return '<strong>页面未显示标准答案</strong><div style="margin-top:4px">学习通页面未显示标准答案，且尚未核实到可靠依据。请先在题库生成器里完成“答案核实”，不要凭猜测作答。</div>';
+  var isNew=!!q.refTag;
+  var h='<strong>'+(isNew?'参考答案（搜索核实）':'答案')+'：</strong>';
+  if(isNew && q.conf==='medium') h+=' <span class="pill r">依据待确认</span>';
+  if(q.ansText){ h+='<div style="white-space:pre-line;margin-top:4px">'+escHtml(fmtAnsText(q.ansText))+'</div>'; }
+  else if(q.type==='fill'){ h+='<ol class="anslist">'+q.ans.map(function(a,i){return '<li>第'+(i+1)+'空：'+escHtml(a)+'</li>'}).join('')+'</ol>'; }
+  else if(q.type==='match'){ h+='<ol class="anslist">'+Object.keys(q.ans).map(function(k){return '<li>'+escHtml(k)+' → '+escHtml(q.ans[k])+'</li>'}).join('')+'</ol>'; }
+  else { h+='<span style="margin-left:4px">'+q.ans.map(function(i){return String.fromCharCode(65+i)}).join('、')+'</span>'; }
+  if(q.exp) h+='<div style="margin-top:8px"><strong>'+(isNew?'依据':'解析')+'：</strong><span style="white-space:pre-line">'+escHtml(q.exp)+'</span></div>';
+  return h;
+}
+var deckFilter='all', deckList=[], deckIdx=0;
+function deckPool(){
+  return QUESTIONS.filter(function(q){
+    if(deckFilter==='orig') return q.src==='orig';
+    if(deckFilter==='ext') return q.src==='ext';
+    if(deckFilter==='unanswered') return !(state[q.id]&&state[q.id].done);
+    if(deckFilter==='wrong') return state[q.id]&&state[q.id].done&&!state[q.id].correct;
+    return true;
+  });
+}
+function renderDeck(){
+  deckList=deckPool();
+  var el=document.getElementById('deckCard');
+  if(!deckList.length){ el.innerHTML='<div class="card">这个筛选下没有题目。换个筛选试试。</div>'; updateDeckMeta(); renderGrid(); return; }
+  if(deckIdx>=deckList.length) deckIdx=deckList.length-1;
+  if(deckIdx<0) deckIdx=0;
+  var q=deckList[deckIdx];
+  var h='<div class="qcard" id="q'+q.id+'">';
+  h+='<div class="qmeta"><span class="pill b">'+typeName(q.type)+'</span> &nbsp;'+escHtml(q.tag)+(q.sec?' · '+escHtml(q.sec):'')+'</div>';
+  h+='<h3>'+escHtml(q.q)+'</h3>';
+  if(q.ing) h+='<div class="ing">'+escHtml(q.ing)+'</div>';
+  if(q.groups){
+    h+='<div class="grid2" style="margin-top:10px"><div><strong>第一组</strong><ul class="tight">'+q.groups.a.map(function(x){return '<li>'+escHtml(x)+'</li>'}).join('')+'</ul></div><div><strong>第二组</strong><ul class="tight">'+q.groups.b.map(function(x){return '<li>'+escHtml(x)+'</li>'}).join('')+'</ul></div></div>';
+  }
+  if(q.opts){
+    h+='<div class="opts" style="margin-top:10px">';
+    q.opts.forEach(function(o,i){ h+='<button class="opt" data-q="'+q.id+'" data-i="'+i+'">'+String.fromCharCode(65+i)+'. '+escHtml(o)+'</button>'; });
+    h+='</div>';
+    if(q.type==='multi'&&hasAns(q)) h+='<button class="btn btn-amber" style="margin-top:10px" onclick="submitMulti(\''+q.id+'\')">提交多选</button>';
+  } else {
+    h+='<button class="btn btn-ghost" style="margin-top:10px" onclick="toggleAns(\''+q.id+'\')">看参考答案</button>';
+    if(hasAns(q)) h+='<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn btn-primary" onclick="selfMark(\''+q.id+'\',true)">✓ 自评答对</button><button class="btn btn-ghost" onclick="selfMark(\''+q.id+'\',false)">✗ 自评答错 / 没答出</button></div>';
+  }
+  h+='<div class="ans" id="ans'+q.id+'">'+ansHtml(q)+'</div>';
+  h+='<div id="fb'+q.id+'" style="margin-top:8px;font-weight:700"></div>';
+  h+='</div>';
+  el.innerHTML=h;
+  var st=state[q.id];
+  if(st&&st.done){ showAns(q.id,true); setFb(q.id,st.correct); if(q.opts&&q.type!=='multi') markOpts(q,st.selected[0],true); if(q.opts&&q.type==='multi') markMulti(q,st.selected); }
+  bindCardOpts(q);
+  updateDeckMeta();
+  renderGrid();
+}
+function bindCardOpts(q){
+  document.querySelectorAll('#q'+q.id+' .opt').forEach(function(b){
+    b.onclick=function(){
+      var idx=+b.dataset.i;
+      if(!hasAns(q)){ showAns(q.id,true); return; }
+      if(q.type==='multi'){
+        b.classList.toggle('correct');
+        b.style.outline=b.classList.contains('correct')?'2px solid var(--ink)':'';
+        return;
+      }
+      var correct=q.ans.indexOf(idx)>=0;
+      state[q.id]={done:true,correct:correct,selected:[idx]};
+      markOpts(q,idx,false); showAns(q.id,true); setFb(q.id,correct); updateDeckMeta(); renderGrid();
+    };
+  });
+}
+function markOpts(q,selIdx,restore){
+  document.querySelectorAll('#q'+q.id+' .opt').forEach(function(b){
+    var i=+b.dataset.i;
+    b.classList.remove('correct','wrong');
+    if(state[q.id] && state[q.id].done && q.ans.indexOf(i)>=0) b.classList.add('correct');
+    if(i===selIdx && state[q.id] && !state[q.id].correct) b.classList.add('wrong');
+  });
+}
+function markMulti(q,sel){
+  document.querySelectorAll('#q'+q.id+' .opt').forEach(function(b){
+    var i=+b.dataset.i;
+    b.classList.remove('correct','wrong');
+    if(q.ans.indexOf(i)>=0) b.classList.add('correct');
+    else if(sel.indexOf(i)>=0) b.classList.add('wrong');
+  });
+}
+function submitMulti(qid){
+  var q=QUESTIONS.find(function(x){return x.id===qid});
+  var sel=[];
+  document.querySelectorAll('#q'+qid+' .opt').forEach(function(b){ if(b.style.outline){ sel.push(+b.dataset.i); b.style.outline=''; }});
+  if(!sel.length){ var fb=document.getElementById('fb'+qid); if(fb) fb.innerHTML='<span style="color:var(--muted)">先点选选项，再提交</span>'; return; }
+  var correct=sel.length===q.ans.length && q.ans.every(function(a){return sel.indexOf(a)>=0});
+  state[qid]={done:true,correct:correct,selected:sel};
+  markMulti(q,sel);
+  showAns(qid,true); setFb(qid,correct); updateDeckMeta(); renderGrid();
+}
+function toggleAns(qid){ showAns(qid); }
+function showAns(qid,force){ var el=document.getElementById('ans'+qid); if(el){ if(force) el.classList.add('show'); else el.classList.toggle('show'); } }
+function setFb(qid,correct){ var el=document.getElementById('fb'+qid); if(el) el.innerHTML=correct?'<span style="color:var(--ink)">✓ 答对了</span>':'<span style="color:var(--muted)">✗ 答错了，看上方解析再记一遍</span>'; }
+function selfMark(qid,correct){ state[qid]={done:true,correct:correct,selected:[]}; showAns(qid,true); setFb(qid,correct); updateDeckMeta(); renderGrid(); }
+function updateDeckMeta(){
+  var done=Object.keys(state).filter(function(k){return state[k].done}).length;
+  var score=Object.keys(state).filter(function(k){return state[k].done&&state[k].correct}).length;
+  var total=QUESTIONS.length;
+  var st=document.getElementById('deckScore'); if(st) st.textContent='已答 '+done+' / '+total+' 题 · 答对 '+score+' 题';
+  var pb=document.getElementById('deckProg'); if(pb) pb.style.width=(total?done/total*100:0)+'%';
+  var ct=document.getElementById('deckCounter'); if(ct) ct.textContent=deckList.length?('第 '+(deckIdx+1)+' / '+deckList.length+' 题'):'第 0 / 0 题';
+}
+function nextCard(){ if(deckIdx<deckList.length-1){ deckIdx++; renderDeck(); window.scrollTo({top:document.getElementById('deckCard').offsetTop-70,behavior:'smooth'}); } }
+function prevCard(){ if(deckIdx>0){ deckIdx--; renderDeck(); window.scrollTo({top:document.getElementById('deckCard').offsetTop-70,behavior:'smooth'}); } }
+function toggleGrid(){
+  var g=document.getElementById('deckGrid');
+  if(g.style.display==='none'){ renderGrid(); g.style.display='block'; } else { g.style.display='none'; }
+}
+function renderGrid(){
+  var g=document.getElementById('deckGrid'); if(!g) return;
+  if(!deckList.length){ g.innerHTML=''; return; }
+  var h='<div class="gridbtns">';
+  deckList.forEach(function(q,i){
+    var cls='';
+    var st=state[q.id];
+    if(st&&st.done) cls=st.correct?'done':'wrong';
+    if(i===deckIdx) cls+=' cur';
+    h+='<button class="'+cls.trim()+'" onclick="jumpCard('+i+')">'+(i+1)+'</button>';
+  });
+  h+='</div>';
+  g.innerHTML=h;
+}
+function jumpCard(i){ deckIdx=i; document.getElementById('deckGrid').style.display='none'; renderDeck(); window.scrollTo({top:document.getElementById('deckCard').offsetTop-70,behavior:'smooth'}); }
+function resetDeck(){
+  state={};
+  deckFilter='all'; deckIdx=0;
+  document.querySelectorAll('#deckFilters .chipbtn').forEach(function(x){x.classList.toggle('active',x.dataset.f==='all')});
+  document.getElementById('deckGrid').style.display='none';
+  renderDeck();
+  window.scrollTo({top:document.getElementById('deckCard').offsetTop-70,behavior:'smooth'});
+}
+document.querySelectorAll('#deckFilters .chipbtn').forEach(function(b){
+  b.onclick=function(){
+    document.querySelectorAll('#deckFilters .chipbtn').forEach(function(x){x.classList.remove('active')});
+    b.classList.add('active');
+    deckFilter=b.dataset.f; deckIdx=0;
+    document.getElementById('deckGrid').style.display='none';
+    renderDeck();
+  };
+});
+(function(){
+  var sec=document.getElementById('deck');
+  var startX=null;
+  sec.addEventListener('touchstart',function(e){ startX=e.changedTouches[0].clientX; },{passive:true});
+  sec.addEventListener('touchend',function(e){
+    if(startX===null) return;
+    var dx=e.changedTouches[0].clientX-startX;
+    if(Math.abs(dx)>60){ if(dx<0) nextCard(); else prevCard(); }
+    startX=null;
+  },{passive:true});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight') nextCard();
+    else if(e.key==='ArrowLeft') prevCard();
+  });
+})();
+renderDeck();
+(function(){
+  var hasOrig=QUESTIONS.some(function(q){return q.src==='orig'});
+  var hasExt=QUESTIONS.some(function(q){return q.src==='ext'});
+  if(!hasOrig){ var b=document.querySelector('#deckFilters .chipbtn[data-f="orig"]'); if(b) b.style.display='none'; }
+  if(!hasExt){ var b2=document.querySelector('#deckFilters .chipbtn[data-f="ext"]'); if(b2) b2.style.display='none'; }
+})();
+function setTheme(name,btn){
+  document.documentElement.setAttribute('data-theme',name);
+  try{localStorage.setItem('tiku-theme',name);}catch(e){}
+  document.querySelectorAll('.tbtn').forEach(function(b){ b.classList.toggle('active', b===btn); });
+}
+(function(){
+  var saved='dark';
+  try{ saved=localStorage.getItem('tiku-theme')||'dark'; }catch(e){}
+  var btn=document.querySelector('.tbtn[data-theme="'+saved+'"]')||document.querySelector('.tbtn[data-theme="dark"]');
+  setTheme(saved,btn);
+})();
+
+</script>
+</body>
+</html>
